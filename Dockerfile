@@ -43,10 +43,10 @@ COPY pyproject.toml pyproject.toml
 COPY vllm/__init__.py vllm/__init__.py
 
 # cuda arch list used by torch
-ARG torch_cuda_arch_list='7.0 7.5 8.0 8.6 8.9 9.0+PTX'
+ARG torch_cuda_arch_list='8.0'
 ENV TORCH_CUDA_ARCH_LIST=${torch_cuda_arch_list}
 # max jobs used by Ninja to build extensions
-ARG max_jobs=2
+ARG max_jobs=6
 ENV MAX_JOBS=${max_jobs}
 # number of threads used by nvcc
 ARG nvcc_threads=8
@@ -99,5 +99,14 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 COPY --from=build /workspace/vllm/*.so /workspace/vllm/
 COPY vllm vllm
 
-ENTRYPOINT ["python3", "-m", "vllm.entrypoints.openai.api_server"]
+#ENTRYPOINT ["python3", "-m", "vllm.entrypoints.openai.api_server"]
 #################### OPENAI API SERVER ####################
+
+#Outlines
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install outlines[serve] --pre
+
+    RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install "pydantic>=2.0"
+
+ENTRYPOINT ["python3", "-m", "outlines.serve.serve"]
