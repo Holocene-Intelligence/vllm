@@ -104,7 +104,7 @@ COPY vllm vllm
 
 #Outlines
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install outlines[serve] --pre
+    pip install outlines[serve]
 
     RUN --mount=type=cache,target=/root/.cache/pip \
     pip install "pydantic>=2.0"
