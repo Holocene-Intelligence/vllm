@@ -47,7 +47,7 @@ def _is_cuda() -> bool:
 
 
 # Compiler flags.
-CXX_FLAGS = ["-g", "-O3", "-march=native", "-std=c++17"]
+CXX_FLAGS = ["-g", "-O3", "-march=znver3", "-std=c++17"]
 # TODO(woosuk): Should we use -O3?
 NVCC_FLAGS = ["-O3", "-std=c++17"]
 
