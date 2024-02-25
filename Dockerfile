@@ -7,7 +7,7 @@ FROM nvidia/cuda:12.1.0-devel-ubuntu22.04 AS dev
 # Set the DEBIAN_FRONTEND variable to noninteractive to avoid interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 ENV VLLM_INSTALL_PUNICA_KERNELS=1
-ENV MAX_JOBS=4
+ENV MAX_JOBS=2
 # Preconfigure tzdata for US Central Time (build running in us-central-1 but this really doesn't matter.)
 RUN echo 'tzdata tzdata/Areas select America' | debconf-set-selections \
     && echo 'tzdata tzdata/Zones/America select Chicago' | debconf-set-selections
@@ -60,10 +60,10 @@ COPY vllm/__init__.py vllm/__init__.py
 ARG torch_cuda_arch_list='8.0'
 ENV TORCH_CUDA_ARCH_LIST=${torch_cuda_arch_list}
 # max jobs used by Ninja to build extensions
-ARG max_jobs=4
+ARG max_jobs=2
 ENV MAX_JOBS=${max_jobs}
 # number of threads used by nvcc
-ARG nvcc_threads=4
+ARG nvcc_threads=2
 ENV NVCC_THREADS=$nvcc_threads
 # make sure punica kernels are built (for LoRA)
 ENV VLLM_INSTALL_PUNICA_KERNELS=1
