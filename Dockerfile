@@ -4,9 +4,22 @@
 #################### BASE BUILD IMAGE ####################
 FROM nvidia/cuda:12.1.0-devel-ubuntu22.04 AS dev
 
-RUN apt-get update -y \
-    && apt-get install -y python3-pip git
+# Set the DEBIAN_FRONTEND variable to noninteractive to avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+ENV VLLM_INSTALL_PUNICA_KERNELS=1
+ENV MAX_JOBS=2
+# Preconfigure tzdata for US Central Time (build running in us-central-1 but this really doesn't matter.)
+RUN echo 'tzdata tzdata/Areas select America' | debconf-set-selections \
+    && echo 'tzdata tzdata/Zones/America select Chicago' | debconf-set-selections
 
+# We install an older version of python here for testing to make sure vllm works with older versions of Python.
+# For the actual openai compatible server, we will use the latest version of Python.
+RUN apt-get update -y \
+    && apt-get install -y software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa -y \
+    && apt-get update -y \
+    && apt-get install -y python3.10 python3.10-dev python3.10-venv python3-pip git \
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
 # Workaround for https://github.com/openai/triton/issues/2507 and
 # https://github.com/pytorch/pytorch/issues/107960 -- hopefully
 # this won't be needed for future versions of this docker image
@@ -43,13 +56,13 @@ COPY pyproject.toml pyproject.toml
 COPY vllm/__init__.py vllm/__init__.py
 
 # cuda arch list used by torch
-ARG torch_cuda_arch_list='7.0 7.5 8.0 8.6 8.9 9.0+PTX'
+ARG torch_cuda_arch_list='8.0'
 ENV TORCH_CUDA_ARCH_LIST=${torch_cuda_arch_list}
 # max jobs used by Ninja to build extensions
 ARG max_jobs=2
 ENV MAX_JOBS=${max_jobs}
 # number of threads used by nvcc
-ARG nvcc_threads=8
+ARG nvcc_threads=2
 ENV NVCC_THREADS=$nvcc_threads
 # make sure punica kernels are built (for LoRA)
 ENV VLLM_INSTALL_PUNICA_KERNELS=1
@@ -70,7 +83,7 @@ ADD . /vllm-workspace/
 COPY --from=build /workspace/vllm/*.so /vllm-workspace/vllm/
 # ignore build dependencies installation because we are using pre-complied extensions
 RUN rm pyproject.toml
-RUN --mount=type=cache,target=/root/.cache/pip VLLM_USE_PRECOMPILED=1 pip install . --verbose
+RUN --mount=type=cache,target=/root/.cache/pip VLLM_INSTALL_PUNICA_KERNELS=1 VLLM_USE_PRECOMPILED=1 pip install . --verbose
 #################### TEST IMAGE ####################
 
 
@@ -102,4 +115,3 @@ COPY --from=build /workspace/vllm/*.so /workspace/vllm/
 COPY vllm vllm
 
 ENTRYPOINT ["python3", "-m", "vllm.entrypoints.openai.api_server"]
-#################### OPENAI API SERVER ####################
