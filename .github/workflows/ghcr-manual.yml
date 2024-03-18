@@ -27,6 +27,13 @@ jobs:
       packages: write
 
     steps:
+      - name: downcase REGISTRY
+        run: |
+          echo "REGISTRY_L=${REGISTRY@L}" >> "${GITHUB_ENV}"
+      - name: downcase IMAGE_NAME
+        run: |
+          echo "IMAGE_NAME_L=${IMAGE_NAME@L}" >> "${GITHUB_ENV}"
+
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it.
       - name: "Checkout Repository"
         uses: actions/checkout@v4
@@ -64,5 +71,5 @@ jobs:
           push: true
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache,mode=max
+          cache-from: type=registry,ref=${{ env.REGISTRY_L }}/${{ env.IMAGE_NAME_L }}:cache
+          cache-to: type=registry,ref=${{ env.REGISTRY_L }}/${{ env.IMAGE_NAME_L }}:cache,mode=max
