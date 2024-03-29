@@ -7,6 +7,8 @@ import sys
 from shutil import which
 from typing import List
 
+os.environ["TORCH_CUDA_ARCH_LIST"]="8.0"
+
 import torch
 from packaging.version import Version, parse
 from setuptools import Extension, find_packages, setup
@@ -21,6 +23,8 @@ assert sys.platform.startswith(
     "linux"), "vLLM only supports Linux platform (including WSL)."
 
 MAIN_CUDA_VERSION = "12.1"
+CXX_FLAGS = ["-g", "-O3", "-march=znver3", "-std=c++17"]
+NVCC_FLAGS = ["-O3", "-std=c++17"]
 
 
 def is_sccache_available() -> bool:
