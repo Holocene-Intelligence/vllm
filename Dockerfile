@@ -18,7 +18,7 @@ RUN apt-get update -y \
     && apt-get install -y software-properties-common \
     && add-apt-repository ppa:deadsnakes/ppa -y \
     && apt-get update -y \
-    && apt-get install -y python3.10 python3.10-dev python3.10-venv python3-pip git \
+    && apt-get install -y python3.10 python3.10-dev python3.10-venv python3-pip git curl \
     && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
 # Workaround for https://github.com/openai/triton/issues/2507 and
 # https://github.com/pytorch/pytorch/issues/107960 -- hopefully
