@@ -21,7 +21,7 @@
 
 import ctypes
 import datetime
-import logging
+import glob
 import os
 
 # ===================== import region =====================
@@ -29,9 +29,20 @@ import torch
 import torch.distributed as dist
 from torch.distributed import ReduceOp
 
-logger = logging.getLogger(__name__)
+from vllm.logger import init_logger
+
+logger = init_logger(__name__)
 
 so_file = os.environ.get("VLLM_NCCL_SO_PATH", "")
+
+# check if we have vllm-managed nccl
+vllm_nccl_path = None
+if torch.version.cuda is not None:
+    cuda_major = torch.version.cuda.split(".")[0]
+    path = os.path.expanduser(
+        f"~/.config/vllm/nccl/cu{cuda_major}/libnccl.so.*")
+    files = glob.glob(path)
+    vllm_nccl_path = files[0] if files else None
 
 # manually load the nccl library
 if so_file:
@@ -39,12 +50,12 @@ if so_file:
         f"Loading nccl from environment variable VLLM_NCCL_SO_PATH={so_file}")
 else:
     if torch.version.cuda is not None:
-        so_file = "libnccl.so.2"
+        so_file = vllm_nccl_path or "libnccl.so.2"
     elif torch.version.hip is not None:
-        so_file = "librccl.so.2"
+        so_file = "librccl.so.1"
     else:
         raise ValueError("NCCL only supports CUDA and ROCm backends.")
-    logger.debug(f"Loading nccl from library {so_file}")
+    logger.info(f"Loading nccl from library {so_file}")
 
 try:
     nccl = ctypes.CDLL(so_file)
@@ -202,11 +213,11 @@ class NCCLCommunicator:
         init_method=None,
         timeout=datetime.timedelta(seconds=10),
         world_size: int = -1,
-        local_rank: int = -1,
         rank: int = -1,
         store=None,
         group_name: str = "",
         pg_options=None,
+        local_rank: int = -1,
     ):
         if not dist.is_initialized():
             backend = backend or "nccl"
@@ -220,6 +231,11 @@ class NCCLCommunicator:
                                     store=store,
                                     group_name=group_name,
                                     pg_options=pg_options)
+        self.rank = dist.get_rank()
+        self.world_size = dist.get_world_size()
+        if local_rank == -1:
+            local_rank = self.rank
+        self.local_rank = local_rank
         torch.cuda.set_device(local_rank)
         if rank == 0:
             self.unique_id = ncclGetUniqueId()

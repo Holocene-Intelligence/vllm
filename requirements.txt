@@ -7,6 +7,8 @@ numpy
 torch == 2.2.2
 transformers >= 4.39.1 # Required for Gemma.
 xformers >= 0.0.26.dev776  # Required for CUDA 12.1.
+requests
+py-cpuinfo
 fastapi
 uvicorn[standard]
 pydantic >= 2.0  # Required for OpenAI server.
@@ -15,3 +17,4 @@ pynvml == 11.5.0
 triton >= 2.1.0
 outlines == 0.0.34
 tiktoken == 0.6.0 # Required for DBRX tokenizer
+vllm-nccl-cu12>=2.18<2.19 # for downloading nccl library
