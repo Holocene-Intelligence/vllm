@@ -5,8 +5,22 @@
 # prepare basic build environment
 FROM nvidia/cuda:12.1.0-devel-ubuntu22.04 AS dev
 
+# Set the DEBIAN_FRONTEND variable to noninteractive to avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+ENV VLLM_INSTALL_PUNICA_KERNELS=1
+ENV MAX_JOBS=2
+# Preconfigure tzdata for US Central Time (build running in us-central-1 but this really doesn't matter.)
+RUN echo 'tzdata tzdata/Areas select America' | debconf-set-selections \
+    && echo 'tzdata tzdata/Zones/America select Chicago' | debconf-set-selections
+
+# We install an older version of python here for testing to make sure vllm works with older versions of Python.
+# For the actual openai compatible server, we will use the latest version of Python.
 RUN apt-get update -y \
-    && apt-get install -y python3-pip git
+    && apt-get install -y software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa -y \
+    && apt-get update -y \
+    && apt-get install -y python3.10 python3.10-dev python3.10-venv python3-pip git \
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
 
 # Workaround for https://github.com/openai/triton/issues/2507 and
 # https://github.com/pytorch/pytorch/issues/107960 -- hopefully
@@ -61,7 +75,7 @@ COPY vllm vllm
 ARG max_jobs=2
 ENV MAX_JOBS=${max_jobs}
 # number of threads used by nvcc
-ARG nvcc_threads=8
+ARG nvcc_threads=2
 ENV NVCC_THREADS=$nvcc_threads
 # make sure punica kernels are built (for LoRA)
 ENV VLLM_INSTALL_PUNICA_KERNELS=1

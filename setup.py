@@ -24,6 +24,8 @@ assert sys.platform.startswith(
 
 MAIN_CUDA_VERSION = "12.1"
 
+os.environ["TORCH_CUDA_ARCH_LIST"]="8.0"
+
 
 def is_sccache_available() -> bool:
     return which("sccache") is not None
